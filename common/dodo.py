@@ -10,27 +10,23 @@ import doit.tools
 import tempfile
 
 INPUT_FILE = doit.get_var("input", "input.txt")
-LANGS = ["py", "cc", "go"]
+LANG_EXTS = ["py", "cc", "go"]
 DOIT_CONFIG = {"default_tasks": ["exe"]}
-
-
-def get_bin_name(src):
-    ext = src.split(".")[-1]
-    return ext + "_" + src.removesuffix(f".{ext}")
 
 
 def lang_files(lang):
     for src in glob.glob(f"*.{lang}"):
         if src == "dodo.py":
             continue
-        built = get_bin_name(src)
-        yield src, built
+        name = src.removesuffix(f".{lang}")
+        built = f"{lang}_{name}"
+        yield src, built, name
 
 
 def task_build_py():
-    for src, built in lang_files("py"):
+    for src, built, name in lang_files("py"):
         yield {
-            "name": built,
+            "name": name,
             "file_dep": [src],
             "actions": [
                 "(echo '#!/usr/bin/env python' && cat %(dependencies)s) > %(targets)s && chmod +x %(targets)s"
@@ -41,9 +37,9 @@ def task_build_py():
 
 
 def task_py():
-    for src, built in lang_files("py"):
+    for _, built, name in lang_files("py"):
         yield {
-            "name": built,
+            "name": name,
             "file_dep": [built],
             "actions": [f"python %(dependencies)s {INPUT_FILE} < {INPUT_FILE}"],
             "verbosity": 2,
@@ -52,9 +48,9 @@ def task_py():
 
 
 def task_build_cc():
-    for src, built in lang_files("cc"):
+    for src, built, name in lang_files("cc"):
         yield {
-            "name": built,
+            "name": name,
             "file_dep": [src],
             "actions": ["g++ -O3 -o %(targets)s %(dependencies)s"],
             "targets": [built],
@@ -63,9 +59,9 @@ def task_build_cc():
 
 
 def task_cc():
-    for src, built in lang_files(lang="cc"):
+    for _, built, name in lang_files(lang="cc"):
         yield {
-            "name": built,
+            "name": name,
             "actions": [f"./%(dependencies)s {INPUT_FILE} < {INPUT_FILE}"],
             "file_dep": [built],
             "verbosity": 2,
@@ -86,9 +82,9 @@ def task_build_go():
                 f" && go build -tags {base_target} -o {abs_target} src.go"
             )
 
-    for src, built in lang_files("go"):
+    for src, built, name in lang_files("go"):
         yield {
-            "name": built,
+            "name": name,
             "file_dep": [src],
             "actions": [(build_isolated, [src, built])],
             "targets": [built],
@@ -97,9 +93,9 @@ def task_build_go():
 
 
 def task_go():
-    for src, built in lang_files("go"):
+    for _, built, name in lang_files("go"):
         yield {
-            "name": built,
+            "name": name,
             "actions": [f"./%(dependencies)s {INPUT_FILE} < {INPUT_FILE}"],
             "file_dep": [built],
             "verbosity": 2,
@@ -110,7 +106,14 @@ def task_go():
 def task_exe():
     return {
         "actions": None,
-        "task_dep": LANGS,
+        "task_dep": LANG_EXTS,
+    }
+
+
+def task_build():
+    return {
+        "actions": None,
+        "task_dep": [f"build_{lang}" for lang in LANG_EXTS],
     }
 
 
@@ -127,14 +130,14 @@ def task_bench():
     all_file_dep = []
     all_bench_cmds = []
 
-    for lang in LANGS:
+    for lang in LANG_EXTS:
         bench_cmds = []
         file_dep = []
-        for _, built in lang_files(lang):
+        for _, built, name in lang_files(lang):
             cmd = f"./{built}"
             yield {
                 "basename": "sol_bench",
-                "name": built,
+                "name": f"{lang}:{name}",
                 "file_dep": [built],
                 "actions": [hyperfine_action([cmd])],
                 "verbosity": 2,
