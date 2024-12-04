@@ -11,38 +11,35 @@ import (
 )
 
 var (
-	mulPattern       = regexp.MustCompile(`mul\((\d+),(\d+)\)`)
-	betweenDoAndDont = regexp.MustCompile(`do\(\)(?s:(.*?))don't\(\)`)
+	mulDoDontPattern = regexp.MustCompile(`mul\((\d+),(\d+)\)|do\(\)|don't\(\)`)
 )
-
-func doMul(data []string) int {
-	total := 0
-	for _, d := range data {
-		for _, match := range mulPattern.FindAllStringSubmatch(d, -1) {
-			x, _ := strconv.Atoi(match[1])
-			y, _ := strconv.Atoi(match[2])
-			total += x * y
-		}
-	}
-	return total
-}
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	var data string
-	data += "do()"
+	do := true
+	solution1 := 0
+	solution2 := 0
 	for scanner.Scan() {
-		data += scanner.Text()
-	}
-	data += "don't()"
+		data = scanner.Text()
 
-	solution1 := doMul([]string{data})
-	var matches []string
-	for _, match := range betweenDoAndDont.FindAllStringSubmatch(data, -1) {
-		matches = append(matches, match[1])
-	}
+		for _, match := range mulDoDontPattern.FindAllStringSubmatch(data, -1) {
+			if match[0] == "do()" {
+				do = true
+			} else if match[0] == "don't()" {
+				do = false
+			} else {
+				x, _ := strconv.Atoi(match[1])
+				y, _ := strconv.Atoi(match[2])
+				v := x * y
+				solution1 += v
+				if do {
+					solution2 += v
+				}
+			}
 
-	solution2 := doMul(matches)
+		}
+	}
 
 	fmt.Println(solution1)
 	fmt.Println(solution2)
