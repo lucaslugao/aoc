@@ -8,20 +8,6 @@ def generate():
         for i, c in enumerate(word):
             transitions[word[:i]][c] = word[: i + 1]
 
-    def tokenize(transitions):
-        tmap = dict()
-        for t in transitions:
-            if t not in tmap:
-                tmap[t] = len(tmap)
-            for c in transitions[t]:
-                if transitions[t][c] not in tmap:
-                    tmap[transitions[t][c]] = len(tmap)
-        tokenized = collections.defaultdict(dict)
-        for t in transitions:
-            for c in transitions[t]:
-                tokenized[tmap[t]][c] = tmap[transitions[t][c]]
-        return tokenized, tmap
-
     def compile(transitions):
         tmap = dict()
         for t in transitions:
@@ -51,15 +37,6 @@ def generate():
 
     c_tr, t_map = compile(s_tr)
 
-    class token_flag:
-        do = t_map["do()"]
-        dont = t_map["don't()"]
-        mul = t_map["mul("]
-        mul1 = t_map["mul(*"]
-        mul1f = t_map["mul(*,"]
-        mul2 = t_map["mul(*,*"]
-        mul2f = t_map["mul(*,*)"]
-
     pprint.pprint(c_tr)
     pprint.pprint(t_map)
 
@@ -71,8 +48,9 @@ if __name__ == "__main__":
 
     # State constants
     class t:
-        do = 6
-        dont = 10
+        start = 0
+        do = 4
+        dont = 9
         mul = 13
         mul1 = 14
         mul1f = 15
@@ -81,17 +59,17 @@ if __name__ == "__main__":
 
     # Transition map
     cTr = {
-        (0, "d"): 1,
-        (1, "o"): 3,
-        (3, "("): 4,
-        (4, ")"): t.do,
-        (3, "n"): 5,
-        (5, "'"): 7,
-        (7, "t"): 8,
-        (8, "("): 9,
-        (9, ")"): t.dont,
-        (0, "m"): 2,
-        (2, "u"): 11,
+        (t.start, "d"): 1,
+        (1, "o"): 2,
+        (2, "("): 3,
+        (3, ")"): t.do,
+        (2, "n"): 5,
+        (5, "'"): 6,
+        (6, "t"): 7,
+        (7, "("): 8,
+        (8, ")"): t.dont,
+        (t.start, "m"): 10,
+        (10, "u"): 11,
         (11, "l"): 12,
         (12, "("): t.mul,
     }
