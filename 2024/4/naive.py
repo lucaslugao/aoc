@@ -4,8 +4,8 @@ import sys
 class Grid:
     def __init__(self, data):
         self.data = data
-        self.w = len(data)
-        self.h = len(data[0])
+        self.h = len(self.data)
+        self.w = len(self.data[0])
 
     def at(self, x, y):
         if x < 0 or x >= self.w or y < 0 or y >= self.h:
