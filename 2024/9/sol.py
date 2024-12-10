@@ -4,11 +4,11 @@ the chunks of data and gaps as sorted ranges. The go version with this
 very same approach is much faster! """
 import sys
 import collections
-import tqdm
 
 
 class Disk:
     def __init__(self, data):
+        self.gap_start = 0
         self.blocks = [-1 for _ in range(sum(data))]
         self.file_blocks = collections.defaultdict(collections.deque)
         pos = 0
@@ -31,9 +31,11 @@ class Disk:
         return "".join(str(x) if x >= 0 else "." for x in self.blocks)
 
     def leftmost_gap(self, size=1):
+        while self.blocks[self.gap_start] != -1:
+            self.gap_start += 1
         c = 0
         ci = None
-        for i in range(len(self.blocks)):
+        for i in range(self.gap_start, len(self.blocks)):
             if self.blocks[i] == -1:
                 if ci is None:
                     ci = i
@@ -65,7 +67,7 @@ class Disk:
 
 def sol1(data):
     D = Disk(data)
-    for idx, size in tqdm.tqdm(D.rev_files()):
+    for idx, size in D.rev_files():
         for _ in range(size):
             g = D.leftmost_gap()
             if g is None:
@@ -76,7 +78,7 @@ def sol1(data):
 
 def sol2(data):
     D = Disk(data)
-    for idx, size in tqdm.tqdm(D.rev_files()):
+    for idx, size in D.rev_files():
         g = D.leftmost_gap(size)
         if g is None:
             continue

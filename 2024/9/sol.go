@@ -1,3 +1,5 @@
+//go:build go_sol
+
 package main
 
 import (
@@ -6,11 +8,13 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 type Disk struct {
 	blocks     []int
 	fileBlocks map[int][]int
+	gapStart   int
 }
 
 func NewDisk(data []int) *Disk {
@@ -48,21 +52,25 @@ func (d *Disk) insertFile(idx, pos, size int) {
 }
 
 func (d *Disk) String() string {
-	s := make([]rune, len(d.blocks))
+	s := make([]string, len(d.blocks))
 	for i, v := range d.blocks {
 		if v >= 0 {
-			s[i] = rune('0' + v)
+			s[i] = fmt.Sprintf("%d", v)
 		} else {
-			s[i] = '.'
+			s[i] = "."
 		}
 	}
-	return string(s)
+	return strings.Join(s, "")
 }
 
 func (d *Disk) leftmostGap(size int) *int {
+	for d.blocks[d.gapStart] != -1 {
+		d.gapStart++
+	}
 	count := 0
 	start := -1
-	for i, v := range d.blocks {
+	for i := d.gapStart; i < len(d.blocks); i++ {
+		v := d.blocks[i]
 		if v == -1 {
 			if start == -1 {
 				start = i
